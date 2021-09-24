@@ -1,0 +1,403 @@
+---
+title: "Multivariate HW4"
+author: '106070020'
+date: "2021年4月26日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1
+
+#### (a)
+```{r}
+#Q1(a)
+dat <- as.matrix(read.table("C:/Users/eva/Desktop/作業 上課資料(清大)/大四下/多變量/hw4/T6_1.dat"), header=T)
+BOD_1<-log(as.numeric(dat[2:12,1]))
+SS_1<-log(as.numeric(dat[2:12,2]))
+BOD_2<-log(as.numeric(dat[2:12,3]))
+SS_2<-log(as.numeric(dat[2:12,4]))
+data<-cbind(BOD_1,SS_1,BOD_2,SS_2)
+data<-as.data.frame(data)
+head(data)
+d1<-data$BOD_1-data$BOD_2
+d2<-data$SS_1-data$SS_2
+diff<-cbind(d1,d2)
+d1bar<-mean(d1)
+d2bar<-mean(d2)
+d<-rbind(d1bar,d2bar)
+d #mean
+delta<-rep(0,2)
+s1<-c(var(d1),cov(d1,d2))
+s2<-c(cov(d1,d2),var(d2))
+sd<-rbind(s1,s2)
+sd #variance matrix
+sdt<-solve(sd)
+sdt #(sd) inverse
+t2<-(t(d)-delta)%*%sdt%*%d
+nt2<-nrow(data)*t2
+nt2 # T square
+#taking alpha=.05
+n<-nrow(data)
+p<-2
+F_stat<-(2*(n-1)/(n-p))*qf(.95, df1=2, df2=9)
+F_stat #F score
+nt2>F_stat
+del1<-c(d1bar-sqrt((n-1)*p/(n-p)*qf(.95, df1=2, df2=9)*var(d1)/n),d1bar+sqrt((n-1)*p/(n-p)*qf(.95, df1=2, df2=9)*var(d1)/n))
+del2<-c(d2bar-sqrt((n-1)*p/(n-p)*qf(.95, df1=2, df2=9)*var(d2)/n),d2bar+sqrt((n-1)*p/(n-p)*qf(.95, df1=2, df2=9)*var(d2)/n))
+del1 #CI of delta1
+del2 #CI of delta2
+```
+
+***
+
++ Since T^2=10.21541 > F score=9.458877, we can reject H0 and conclude that there is a nonzero mean difference between the mesurements of two labortories.
++ The 95% simutaneous intervals for the mean difference delta are:
+    + -1.1844404 < delta1 < 0.0680501
+    + -0.1020988 < delta2 < 0.6931554
+
+#### (b)
+```{r}
+t_10<-qt(1-0.05/4,10)
+t_10 
+bdel1<-c(d1bar-t_10*sqrt(var(d1)/n),d1bar+t_10*sqrt(var(d1)/n))
+bdel2<-c(d2bar-t_10*sqrt(var(d2)/n),d2bar+t_10*sqrt(var(d2)/n))
+bdel1
+bdel2
+```
+
+***
+*  The 95% Bonferroni simutaneous intervals for the components of the mean vector delta of transformed variables are:
+    + -1.09448795 < delta1 <-0.02190232
+    + -0.04498455 < delta2 < 0.63604112
+
+#### (c)
+```{r message=F}
+#(c)
+library(MVN)
+result<-mvn(diff, mvnTest = 'mardia')
+result$multivariateNormality
+result<-mvn(diff, mvnTest = 'hz')
+result$multivariateNormality
+```
+
+***
++ Since both tests indicate multivariate normality, then data diff follows a multivariate normalitydistribution at the 0.05 confidence level.
+
+## Problem 2
+
+#### (a)
+```{r}
+#Q2(a)
+treatment2<-rbind(c(3,3),c(1,6),c(2,3))
+treatment3<-rbind(c(2,3),c(5,1),c(3,1), c(2,3))
+
+mtr2<-c(mean(treatment2[,1]),mean(treatment2[,2]))
+mtr2
+s11<-var(treatment2[,1])
+s12<-var(treatment2[,1],treatment2[,2])
+s22<-var(treatment2[,2])
+str2<-rbind(c(s11,s12),c(s12,s22))
+str2
+mtr3<-c(mean(treatment3[,1]),mean(treatment3[,2]))
+mtr3
+s311<-var(treatment3[,1])
+s312<-var(treatment3[,1],treatment3[,2])
+s322<-var(treatment3[,2])
+str3<-rbind(c(s311,s312),c(s312,s322))
+str3
+s_pool<-(3-1)/(3+4-2)*str2+(4-1)/(3+4-2)*str3
+s_pool
+```
+
+#### (b)
+```{r}
+#(b)
+T_sqr<-t(mtr2-mtr3)%*%solve((1/3+1/4)*s_pool)%*%(mtr2-mtr3)
+T_sqr
+c_sqr<-(3+4-2)/(3+4-2-1)*2*qf(.99, 2, (3+4-2-1))
+c_sqr
+T_sqr < c_sqr
+```
+
+***
++ H0: The difference of mu1 and mu2 is 0. H1:The difference of mu1 and mu2 is not 0.
++ T_sqr=3.870968 < c_sqr=45, so we cannot reject H0.
+
+#### (c)
+```{r}
+#i=1
+ci1<-c((mtr2[1]-mtr3[1])-sqrt(c_sqr*(1/3+1/4)*s_pool[1,1]),(mtr2[1]-mtr3[1])+sqrt(c_sqr*(1/3+1/4)*s_pool[1,1]))
+#i=2
+ci2<-c((mtr2[2]-mtr3[2])-sqrt(c_sqr*(1/3+1/4)*s_pool[2,2]),(mtr2[2]-mtr3[2])+sqrt(c_sqr*(1/3+1/4)*s_pool[2,2]))
+ci1
+ci2
+```
+
+***
+> 99% simultaneous CI for the difference :
+
++ -7.480741 < mu11-mu21 < 5.480741
++ -5.245688 < mu12-mu22 < 9.245688
+
+## Problem 3
+
+#### (a)
+```{r}
+data3<-read.csv("C:/Users/eva/Desktop/作業 上課資料(清大)/大四下/多變量/hw4/problem3.csv")
+own<-data3$CONTROL
+con1<-data3$LATITUDE
+con2<-data3$LONGITUDE
+uu<-lm(cbind(con1, con2) ~ own)
+anova(uu)
+summary.aov(uu)
+```
+
+***
+> 
++ H0: The location of school does not differs among different ownership.
++ H1: The location of school does differs among different ownership.
++ F statistic = 0.1733 > 0.05
++ Conclusion : Cannot reject H0
+
+#### (b)
+```{r message=F}
+# 1. Public
+# 2. Private nonprofit
+# 3. Private for-profit
+# 4. Foreign
+
+library(dplyr)
+ownloc<-cbind(own,con1,con2)
+ownloc=as.data.frame(ownloc)
+public<-filter(.data=ownloc, ownloc$own == "1")
+private<-filter(.data=ownloc, ownloc$own  %in% c("2","3"))
+
+p1<-data.frame(type=rep(1,nrow(public)),latitude=public$con1, longtitude=public$con2)
+p2<-data.frame(type=rep(2,nrow(private)),latitude=private$con1, longtitude=private$con2)
+pmd<-rbind(p1,p2)
+head(pmd)
+tvart<-t.test(cbind(pmd$latitude,pmd$longtitude)~pmd$type , var.equal = T)
+tvart
+tvarf<-t.test(cbind(pmd$latitude,pmd$longtitude)~pmd$type , var.equal = F)
+tvarf
+```
+
+***
+>
++ H0 : True difference in means is equal to 0
++ H1 : True difference in means is not equal to 0
+
++ Testing statistics: 
+    + With equal variance: t = -0.48158, df = 238, p-value = 0.6305
+    + Without equal variance: t = -0.47715, df = 154.28, p-value = 0.6339
++ We cannot reject H0 with or without the equal variance. 
+
+#### (c)
+```{r}
+library(ellipse)
+#(c)
+public<-filter(.data=ownloc, ownloc$own == "1")
+private<-filter(.data=ownloc, ownloc$own  %in% c("2","3"))
+
+mpub<-c(mean(public$con1),mean(public$con2))
+pubs11<-var(public$con1)
+pubs12<-var(public$con1,public$con2)
+pubs22<-var(public$con2)
+pubstr2<-rbind(c(pubs11,pubs12),c(pubs12,pubs22))
+
+mpri<-c(mean(private$con1),mean(private$con2))
+pris311<-var(private$con1)
+pris312<-var(private$con1,private$con2)
+pris322<-var(private$con2)
+pristr3<-rbind(c(pris311,pris312),c(pris312,pris322))
+
+pps_pool<-(40-1)/(40+80-2)*pubstr2+(80-1)/(40+80-2)*pristr3
+d.bar<-mpub-mpri
+conf.ellipse<-ellipse(pps_pool,centre=d.bar, level=0.95)
+{plot(conf.ellipse, type="l", main='The difference of location centers between public schools
+      and non-public schools', lwd=2, col='blue')
+points(x=d.bar[1],y=d.bar[2],pch=16, col="red")
+text(x=-2, y=1, 'The difference of location centers', col='red')}
+
+```
+
+***
+> 
++ The result consistent with the output of (b), as the difference of location centers is inside the 95% confidence ellipse for the difference of location centers between public schools and non-public schools. + Conclusion: We cannot reject H0.(The schools of the two groups aren't distributed at different 
+locations.)
+
+#### (d)
+```{r message=F}
+library(knitr)
+X1<-colMeans(public[,2:3])
+X2<-colMeans(private[,2:3])
+S1<-var(public[,2:3])
+S2<-var(private[,2:3])
+n1<-nrow(public)
+n2<-nrow(private)
+Sp<-((n1-1)*S1+(n2-1)*S2)/(n1+n2-2)
+p<-dim(public[,2:3])[2]
+delta0 <- rep(0,p)
+T2 <- (n1*n2/(n1+n2))*t(X1-X2-delta0)%*%solve(Sp)%*%(X1-X2-delta0)
+crit <- (n1 + n2 - 2)*p/(n1 + n2 - p - 1)*qf(1-.05, p, n1 + n2 - p - 1)
+A<-diag(p)
+T2 > crit
+lower <- t(A)%*%(X1 - X2) - sqrt(crit) * sqrt(diag((t(A)%*%Sp%*%A)*(1/n1 + 1/n2)))
+upper <- t(A)%*%(X1 - X2) + sqrt(crit) * sqrt(diag((t(A)%*%Sp%*%A)*(1/n1 + 1/n2)))
+out <- as.data.frame(cbind(lower, upper), 
+                     row.names = c("Lontitude", "Latitude"))
+names(out) <- c("Lower", "Upper")
+kable(out)
+
+```
+
+## Problem 4
+
+#### (a)(i) Fit appropriate linear model
+```{r message=F}
+library(survMisc)
+library(dplyr)
+
+#(i)
+ami<-read.table("C:/Users/eva/Desktop/作業 上課資料(清大)/大四下/多變量/hw4/T7_6.dat", header=T)
+head(ami)
+fit.y1<-lm(y1~factor(z1)+z2+z3+z4+z5,data=ami)
+summary(fit.y1)
+c.y1 <- round(fit.y1$coefficients, digits = 4)
+c.y1
+anova(fit.y1)
+
+```
+
+***
+> MODEL: Y1=−2879.4782 + 675.6508z1 + 0.2849z2 + 10.2721z3 + 7.2512z4 + 7.5982z5
+
+#### (a)(ii) Residual Analysis
+```{r message=F, warning=FALSE, comment=FALSE}
+#(ii)
+library(ggfortify)
+autoplot(fit.y1, which = 1:6, ncol = 3, label.size = 3)
+```
+
+
+#### (a)(iii)Prediction Interval
+```{r}
+#(iii)
+pred.y1 <- data.frame(z1 = 1, z2 = 1200, z3 = 140, z4 = 70, z5 = 85)
+PI.95.y1 <- predict(fit.y1, newdata = pred.y1, interval = 'prediction')
+dimnames(PI.95.y1)[[2]] <- list("Estimate", "Lower Limit", "Upper Limit")
+PI.95.y1
+```
+
+#### (b)(i) Fit appropriate linear model
+```{r}
+fit.y2<-lm(y2~factor(z1)+z2+z3+z4+z5,data=ami)
+summary(fit.y2)
+c.y2 <- round(fit.y2$coefficients, digits = 4)
+c.y2
+anova(fit.y2)
+```
+
+***
+> MODEL: Y2= -2728.7085 + 763.0298z1 + 0.3064z2 + 8.8962z3 + 7.2056z4 + 4.9871z5
+
+#### (b)(ii) Residual Analysis
+```{r message=F, warning=FALSE, comment=FALSE}
+autoplot(fit.y2, which = 1:6, ncol = 3, label.size = 3)
+```
+
+#### (b)(iii) Prediction Interval
+```{r}
+pred.y2 <- data.frame(z1 = 1, z2 = 1200, z3 = 140, z4 = 70, z5 = 85)
+PI.95.y2 <- predict(fit.y2, newdata = pred.y2, interval = 'prediction')
+dimnames(PI.95.y2)[[2]] <- list("Estimate", "Lower Limit", "Upper Limit")
+PI.95.y2
+```
+ 
+####(c)(i) Fit appropriate linear model
+```{r message=F}
+library(car)
+fit.y1y2 <- lm(as.matrix(ami[,1:2]) ~ factor(z1) + z2 + z3 + z4 + z5 , data = ami)
+y1y2.sum <- summary(fit.y1y2)
+y1y2.sum
+c.y1y2 <- round(fit.y1y2$coefficients, digits = 4)
+c.y1y2
+
+man.y1y2 <- Manova(fit.y1y2)
+summary(man.y1y2, "Wilks")
+```
+
+#### (c)(ii) Residual Analysis
+```{r message=F, warning=FALSE, comment=FALSE}
+plot(fit.y1y2$residuals)
+```
+
+#### (c)(iii) Prediction Interval
+```{r message=F, warning=FALSE, comment=FALSE}
+pred.y1y2 <- data.frame(z1 = 1, z2 = 1200, z3 = 140, z4 = 70, z5 = 85)
+point <- as.data.frame(predict(fit.y1y2, newdata = pred.y1y2, interval = 'prediction'))
+center <- c(point[1,1], point[1,2])
+
+Z <- model.matrix(fit.y1y2)
+resp <- fit.y1y2$model[[1]]#list(if 1[], type will be matrix)
+n <- nrow(resp); m <- ncol(resp); r <- ncol(Z) - 1
+S <- crossprod(fit.y1y2$residuals)/(n - r - 1)#inner product
+
+t2 <- terms(fit.y1y2)
+term <- delete.response(t2)
+mframe <- model.frame(term, pred.y1y2, na.action = na.pass, xlev = fit.y1y2$xlevels)
+z0 <- model.matrix(term, mframe, contrasts.arg = fit.y1y2$contrasts)
+radius <- sqrt((m*(n - r - 1)/(n - r - m))*qf(0.95, m, n - r - m)*z0%*%solve(t(Z)%*%Z) %*% t(z0))
+
+lipsy <-as.data.frame(ellipse(center = c(center), shape = S, radius = c(radius), draw = FALSE))
+
+
+ggplot(lipsy, aes(x, y)) + 
+  geom_path() + 
+  geom_point(aes(x = y1, y = y2), data = point, alpha = 0.5) + 
+  labs(x = "Total TCAD plasma level (plasma)", 
+       y = "Amount of amitriptyline present in TCAD plasma level (ami)", 
+       title = "95% Prediction Ellipse for Given Predictor Setting")
+
+ggplot(lipsy, aes(x, y)) + 
+  geom_hline(aes(y = PI.95.y1[[2]]), 
+             yintercept = PI.95.y1[[2]], 
+             color = "blue", 
+             linetype = "dashed") + 
+  geom_hline(aes(y = PI.95.y1[[3]]), 
+             yintercept = PI.95.y1[[3]], 
+             color = "blue", 
+             linetype = "dashed") + 
+  geom_vline(aes(x = PI.95.y2[[2]]), 
+             xintercept = PI.95.y2[[2]], 
+             color = "red", 
+             linetype = "dashed") + 
+  geom_vline(aes(x = PI.95.y2[[3]]), 
+             xintercept = PI.95.y2[[3]], 
+             color = "red", 
+             linetype = "dashed") + 
+  geom_path() + 
+  geom_point(aes(x = y1, y = y2), 
+             data = point, 
+             alpha = 0.5) + 
+  labs(x = "Total TCAD plasma level (plasma)", 
+       y = "Amount of amitriptyline present in TCAD plasma level (ami)", 
+       title = "95% Prediction Ellipse for Given Predictor Setting",
+       subtitle = "Red/Blue Dashed Lines Represent Prediction Interval Limits from Parts (a) & (b)") 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
