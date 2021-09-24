@@ -1,0 +1,140 @@
+---
+title: "Multivariate hw5"
+author: '106070020'
+date: "2021年5月11日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+dat2 <- as.matrix(read.table("C:/Users/eva/Desktop/作業 上課資料(清大)/大四下/多變量/hw5/T4-6.DAT"), header=T)
+dat3 <- as.matrix(read.table("C:/Users/eva/Desktop/作業 上課資料(清大)/大四下/多變量/hw5/T8-4.DAT"), header=T)
+
+```
+
+## Q2
+####(a)
+```{r}
+dat2<-dat2[,1:5]
+var(dat2)
+pc2 <- prcomp(dat2)
+var_pc2<-(pc2$sdev)^2
+#eigenvalue
+var_pc2
+cov_mat2<-pc2$rotation
+#eigenvector
+cov_mat2
+#variance explained
+pc2$sdev^2/sum(pc2$sdev^2)
+#scree plot
+plot(pc2$sdev^2/sum(pc2$sdev^2), pch = 16, xlab = "principal components",
+     ylab = "variance explained", main="Variance Explained")
+```
+
+***
+>Using the scree plot and the proportion of variance explained, it seems that 4
+components should be retained. These components explain almost all (98%) of
+the variabilty. 
+
+####(b)
+```{r}
+mainpc2<-cov_mat2[,1:2]
+rownames(mainpc2)=c("Indep", "Supp", "Benev", "Conform", "Leader")
+mainpc2
+```
+
+***
+> The first component contrasts independence and leadership with benevolence and conformity. The second component contrasts support with conformity and leadership and so on.  
+
+
+####(c)
+```{r}
+library(ggplot2)
+dat22<-scale(dat2)
+PC1 <- as.matrix(dat22) %*% mainpc2[,1]
+PC2 <- as.matrix(dat22) %*% mainpc2[,2]
+PC <- data.frame(PC1, PC2)
+head(PC)
+
+ggplot(PC, aes(PC1, PC2)) + 
+  modelr::geom_ref_line(h = 0) +
+  modelr::geom_ref_line(v = 0) +
+  geom_point(mapping=aes(PC1, PC2),data=PC) +
+  xlab("y2_hat") + 
+  ylab("y1_hat") + 
+  ggtitle("First Two Principal Components of psychological profile data ")
+```
+
+***
+> The two dimensional plot of the scores on the first two components suggests that the two socioeconomic levels cannot be distinguished from one another nor can the two genders be distinguished.
+
+
+####(d)
+```{r}
+R<-cor(dat22)
+R
+biplot(pc2, scale = 0)
+```
+
+***
+>The components are very similar to those obtained from the correlation matrix R. All four of the components represent contrasts of some forms.
+
+
+##Q3
+```{r message=F, warning=F}
+library(aTSA)
+pc3 <- prcomp(dat3)
+var(dat3)
+var_pc3<-(pc3$sdev)^2
+var_pc3
+cov_mat3<-pc3$rotation
+cov_mat3
+var_ex3<-pc3$sdev^2/sum(pc3$sdev^2)
+cumsum(var_ex3)
+
+mainpc3<-cov_mat3[,1:2]
+dat33<-scale(dat3)
+PC11 <- as.matrix(dat33) %*% mainpc3[,1]
+PC22 <- as.matrix(dat33) %*% mainpc3[,2]
+PC3 <- data.frame(PC11, PC22)
+head(PC3)
+ts.plot(PC11, main='Time Series plot of PC1')
+ts.plot(PC22, main='Time Series plot of PC2')
+adf.test(ts(PC11))
+adf.test(ts(PC22))
+```
+
+***
+> According to the adf.test, the two time series plot are both stationary, as p-value is less than 0.01.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
