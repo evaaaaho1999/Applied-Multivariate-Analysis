@@ -1,0 +1,233 @@
+---
+title: "Applied Multivariate Analysis HW6"
+author: '106070020'
+date: "2021年5月25日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Library
+```{r message=F, warning=F}
+library(psych)
+library(GPArotation)
+library(corrplot)
+library(ellipse)
+library(nFactors)
+```
+
+## Data
+```{r}
+data<-read.csv("C:/Users/eva/Desktop/作業 上課資料(清大)/大四下/多變量/hw6/102年臺北10-18歲兒少問卷.csv", header=T)
+dat<-with(data, cbind(B10_1, B10_2,B10_3,B10_4,B10_5,B10_6,B10_7,B10_8,B10_9,B10_10,
+                 C9_1,C9_2,C9_3,C9_4,C9_5,C9_6,C9_7,C9_8,C9_9,C9_10,C9_11,C9_12,C9_13,C9_14,C9_15,C9_16,C9_17,C9_18,C9_19,
+                 C10_1,C10_2,C10_3,C10_4,C10_5,C10_6,C10_7,C10_8,C10_9,C10_10,C10_11,C10_12,C10_13,C10_14,C10_15,C10_16,C10_17,C10_18,C10_19,C10_20))
+dat<-as.data.frame(dat)
+dat1<-replace(dat, dat==9, 0) #Transform NA value(original=9) to 0
+describe(dat1)
+```
+
+##Correlation plot
+```{r}
+# round(cor(dat1, use="complete.obs"),2)
+corrplot(cor(dat1, use="complete.obs"), order = "original", tl.col='black', tl.cex=.75) 
+corrplot(cor(dat1, use="complete.obs"), order = "hclust", tl.col='black', tl.cex=.75) 
+```
+
+***
+>We see that there are some “clumps” of items that are positively correlated - evidence of some common factors.
+
+##KMO Test
+```{r}
+dat_corr<-cor(dat1)
+KMO(dat_corr)
+```
+
+***
+>MSA (measure of sampling adequacy) is a measure for exclusion of variables. If MSA < 0.5 the variable should be dropped. Variables with MSA > 0.6 are suitable, variables with MSA > 0.8 very well suited for factor analysis. The result tells us that there is no variables to drop. 
+
+
+##Scree plot
+```{r warning=F}
+nScree(x=dat1,model="factors")
+plot(nScree(x=dat1,model="factors"))
+```
+
+***
+>According to the Scree plot, I choose nfactors=8.
+
+
+## Question 1: Use PC method, PF method and MLE method to derive the loading coefficients and rotate the results with both varimax and quartimax method. 
+```{r}
+#Varimax Rotated Principal Components Method
+fitv <- principal(dat, nfactors=8, rotate="varimax")
+fitv # print results
+
+#Quartimax Rotated Principal Components Method
+fitq <- principal(dat, nfactors=8, rotate="quartimax")
+fitq # print results
+
+#Varimax Rotated Principal factor Method
+fit2v <-  fa(dat1, nfactors = 8, rotate = 'varimax', fm = 'pa', scores = "regression")
+fit2v 
+#Quartimax Rotated Principal factor Method
+fit2q <-  fa(dat1, nfactors = 8, rotate = 'quartimax', fm = 'pa', scores = "regression")
+fit2q 
+
+# Varimax Rotated Maximum Likelihood Method
+fit3v<-factanal(dat1, factors=8, scores = "regression",rotation="varimax")
+print(fit3v, digits=2, cutoff=.3, sort=TRUE)
+
+# Quartimax Rotated Maximum Likelihood Method
+fit3q<-factanal(dat1, factors=8, scores = "regression",rotation="quartimax")
+print(fit3q, digits=2, cutoff=.3, sort=TRUE)
+
+```
+
+***
+>  The sums of squared (SS) loadings are the eigenvalues, or the variance in all variables which is accounted for by that factor. If a factor has a “high” SS loading, then it is helping to explain the variances in the variables. A general rule-of-thumb called the Kaiser Rule, suggest that a factor is important if its eigenvalue is greater than 1. Here, factors 1-8 appear to be important. 
+
+## Question 2: Compare the results and select one combination to conclude your analysis. 
+
+```{r}
+par(mfrow=c(1,2))
+{load = fitv$loadings[,1:2]
+plot(load, type="n", main="New loadings for the first two factors of Varimax PC") # set up plot 
+text(load,labels=names(dat1),cex=.7, col="blue") # add variable names
+
+load2 = fitq$loadings[,1:2]
+plot(load2, type="n", main="New loadings for the first two factors of Quartimax PC") # set up plot 
+text(load2,labels=names(dat1),cex=.7, col="blue") # add variable names
+}
+par(mfrow=c(1,2))
+{load3 = fit2v$loadings[,1:2]
+plot(load3, type="n", main="New loadings for the first two factors of Varimax PF") # set up plot 
+text(load3,labels=names(dat1),cex=.7, col="blue") # add variable names
+
+load4 = fit2q$loadings[,1:2]
+plot(load4, type="n", main="New loadings for the first two factors of Quartimax PF") # set up plot 
+text(load4,labels=names(dat1),cex=.7, col="blue") # add variable names
+}
+
+par(mfrow=c(1,2))
+{load5 <- fit3v$loadings[,1:2]
+plot(load5, type="n", main="New loadings for the first two factors of Varimax MLE") # set up plot 
+text(load5,labels=names(dat1),cex=.7, col="blue") # add variable names
+
+load6 <- fit3q$loadings[,1:2]
+plot(load6, type="n", main="New loadings for the first two factors of Quartimax MLE") # set up plot 
+text(load6,labels=names(dat1),cex=.7, col="blue") # add variable names
+}
+
+```
+
+***
+>
++ Comparing to the plot above, varimax and quartimax Rotated Principal Components Method can better explain the data, as in other methods, the description of one factor might overlap with a description of another factor(Like MLE method). Or the output did not show the obvious classification(Principal method). 
++ According to the loading plot of varimax and quartimax Rotated Principal Components Method, we can see that now all the C_1 to C_10 variables load heavily on Factor 1, but have very low loadings on Factor 2. In the vertical direction, we see that the C_11 to C_20 variable load heavily on Factor 2 but less so on Factor 1. 
++ As a result, we can define or label the factors using those terms, e.g., Factor 1 might be labeled adolesence personal delinquency, and Factor 2 might be labeled adolesence group delinquency.
+
+
+##Question 3: Use regression method to derive factor scores. Make a scatter plot for the first two factors and select the potential outliers according to the 95% confidence ellipse. Check the raw data and describe the special characteristics of outliers. 
+
+```{r}
+par(mfrow=c(1,1))
+scv1<-fitv$scores
+plot(scv1, col='blue', pch=19, type="n", main=' 95% confidence ellipse of verimax PC method')
+text(scv1,labels=names(dat1),cex=.7, col="blue")
+m_score1<-c(mean(scv1[,1]),mean(scv1[,2]))
+vv1<-var(scv1)
+conf.ellipse<-ellipse(vv1,centre=m_score1, level=0.95)
+{lines(conf.ellipse, type="l", lwd=2, col='green')}
+points(x=m_score1[1],y=m_score1[2],pch=16, col="red")
+
+scq1<-fitq$scores
+plot(scq1, col='blue', pch=19, type="n", main=' 95% confidence ellipse of quartimax PC method')
+text(scq1,labels=names(dat1),cex=.7, col="blue")
+m_score2<-c(mean(scq1[,1]),mean(scq1[,2]))
+vq1<-var(scq1)
+conf.ellipse2<-ellipse(vq1,centre=m_score2, level=0.95)
+{lines(conf.ellipse2, type="l", lwd=2, col='green')}
+points(x=m_score2[1],y=m_score2[2],pch=16, col="red")
+
+
+scv2<-fit2v$scores
+plot(scv2, col='blue', pch=19, type="n", main=' 95% confidence ellipse of verimax PF method')
+text(scv2,labels=names(dat1),cex=.7, col="blue")
+m_score3<-c(mean(scv2[,1]),mean(scv2[,2]))
+vv2<-var(scv2)
+conf.ellipse3<-ellipse(vv2,centre=m_score3, level=0.95)
+{lines(conf.ellipse3, type="l", lwd=2, col='green')}
+points(x=m_score3[1],y=m_score3[2],pch=16, col="red")
+
+scq2<-fit2q$scores
+plot(scq2, col='blue', pch=19, type="n", main=' 95% confidence ellipse of quartimax PF method')
+text(scq2,labels=names(dat1),cex=.7, col="blue")
+m_score4<-c(mean(scq2[,1]),mean(scq2[,2]))
+vq2<-var(scq2)
+conf.ellipse4<-ellipse(vq2,centre=m_score4, level=0.95)
+{lines(conf.ellipse4, type="l", lwd=2, col='green')}
+points(x=m_score4[1],y=m_score4[2],pch=16, col="red")
+
+scv3<-fit3v$scores
+plot(scv3, col='blue', pch=19, type="n", main=' 95% confidence ellipse of verimax MLE method')
+text(scv3,labels=names(dat1),cex=.7, col="blue")
+m_score5<-c(mean(scv3[,1]),mean(scv3[,2]))
+vv3<-var(scv3)
+conf.ellipse5<-ellipse(vv3,centre=m_score5, level=0.95)
+{lines(conf.ellipse5, type="l", lwd=2, col='green')}
+points(x=m_score5[1],y=m_score5[2],pch=16, col="red")
+
+scq3<-fit3q$scores
+plot(scq3, col='blue', pch=19, type="n", main=' 95% confidence ellipse of quartimax MLE method')
+text(scq3,labels=names(dat1),cex=.7, col="blue")
+m_score6<-c(mean(scq3[,1]),mean(scq3[,2]))
+vq3<-var(scq3)
+conf.ellipse6<-ellipse(vq3,centre=m_score6, level=0.95)
+{lines(conf.ellipse6, type="l", lwd=2, col='green')}
+points(x=m_score6[1],y=m_score6[2],pch=16, col="red")
+
+```
+
+
+***
+> 
++ I still choose the verimax and quartimax PC method to do the analysis. The outliers are C_1 to C_20, and B10_1.
++ 根據原始資料，B10_1代表爸媽/主要照顧者讓我感覺到我有權利發脾氣，而C_1至C_20代表著青少年的不良行為，我認為這兩者之間是有關連的，若是青少年認為自己不開心時有權利發脾氣，很可能導致這一些不良行為的發生。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
